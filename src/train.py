@@ -5,8 +5,6 @@ from torch.utils.data import DataLoader
 from src.dataset import DentalDataset
 from src.model import SimpleYOLO
 from src.utils import draw_boxes
-from src.matching import match_predictions
-from src.matching import force_match
 from src.utils import yolo_loss
 
 
@@ -154,6 +152,7 @@ with torch.no_grad():
         plt.imshow(img_gt)
         plt.axis("off")
 
+        plt.savefig("results.png")
         plt.show()
 
         break
