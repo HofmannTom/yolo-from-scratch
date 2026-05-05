@@ -1,54 +1,76 @@
-\# 🦷 Dental YOLO (from scratch)
+🦷 Dental Object Detection (Mini-YOLO from Scratch)
 
+This project implements a simplified YOLO-style object detection model from scratch using PyTorch.
 
+The goal is to detect dental structures in panoramic X-ray images using a custom-built neural network — without relying on pretrained detection frameworks.
 
-This project implements a simplified YOLO-style object detector for dental X-ray images using PyTorch.
+🚀 Features
+Custom CNN-based object detector
+YOLO-style grid prediction (7x7)
+Bounding box prediction: [x, y, w, h, confidence]
+Custom loss function:
+Box regression loss
+Object confidence loss
+No-object penalty
+Non-Maximum Suppression (NMS)
+Visualization of predictions vs ground truth
+Model saving (model.pt)
+🧠 Model Overview
 
+Input:
 
+Grayscale image (1 × 256 × 256)
 
-\## 🚀 Features
+Output:
 
-\- Custom dataset loader (YOLO format)
+Grid: (7 × 7 × 5)
+Each cell predicts:
+x, y (relative position)
+width, height
+confidence score
+🔄 Pipeline
+Image → CNN → Feature Maps → Grid Prediction → Bounding Boxes → NMS → Final Output
+📦 Training
 
-\- Grid-based detection (7x7)
+Run training:
 
-\- CNN backbone
+python src/train.py
 
-\- YOLO-style loss function
+Model is saved automatically:
 
-\- Training + visualization
+model.pt
+🖼️ Results
 
+Predictions are saved to:
 
+results/prediction.png
 
-\## 📊 Results
+Example:
 
-\- Loss decreases from \~1300 → \~200
+Green = Predictions
+Red = Ground Truth
+🔧 Requirements
 
-\- Model predicts bounding boxes on dental images
+Install dependencies:
 
-\- Some false positives remain (no NMS yet)
+pip install -r requirements.txt
+📁 Project Structure
+src/
+ ├── train.py
+ ├── model.py
+ ├── dataset.py
+ ├── utils.py
+🎯 Key Concepts Implemented
+Convolutional Neural Networks (CNN)
+Grid-based object detection (YOLO concept)
+Intersection over Union (IoU)
+Non-Maximum Suppression (NMS)
+Custom loss functions
+📌 Notes
 
+This is a learning-focused implementation and not optimized for production.
 
+👨‍💻 Author
 
-\## 🧠 How it works
-
-\- Image → CNN → Feature maps
-
-\- Feature maps → Linear → 7x7 grid
-
-\- Each cell predicts:
-
-&#x20; - x, y, w, h
-
-&#x20; - confidence
-
-
-
-\## ▶️ Run training
-
-
-
-```bash
-
-python -m src.train
+Thomas Hofmann
 

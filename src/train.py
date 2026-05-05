@@ -1,11 +1,13 @@
 import os
 import torch
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 from torch.utils.data import DataLoader
 from src.dataset import DentalDataset
 from src.model import SimpleYOLO
 from src.utils import draw_boxes
 from src.utils import yolo_loss
+from src.utils import nms
 
 
 # ----------------------------
@@ -84,7 +86,7 @@ for epoch in range(EPOCHS):
 torch.save(model.state_dict(), "model.pt") #Model_speichern
 
 # ----------------------------
-# Visualisierung
+# Visualisierung (FINAL)
 # ----------------------------
 print("Visualisiere Predictions...")
 
@@ -97,29 +99,31 @@ with torch.no_grad():
         preds = model(imgs)
 
         # Erstes Bild im Batch
-        img = imgs[0].cpu().squeeze().numpy()        # (256,256)
-        pred_grid = preds[0].cpu()                   # (7,7,5)
-        target_grid = targets[0]                     # (7,7,5)
-
-        # Grid → Boxen umwandeln
-        pred_boxes = []
-        target_boxes = []
+        img = imgs[0].cpu().squeeze().numpy()
+        pred_grid = preds[0].cpu()
+        target_grid = targets[0]
 
         GRID_SIZE = 7
 
+        pred_boxes = []
+        target_boxes = []
+
+        # ----------------------------
+        # Grid → Boxen umwandeln
+        # ----------------------------
         for gy in range(GRID_SIZE):
             for gx in range(GRID_SIZE):
 
                 # -------- PRED --------
                 px, py, pw, ph, pconf = pred_grid[gy, gx]
 
-                if pconf > 0.5:  # threshold
+                if pconf > 0.5:
                     x = (gx + px.item()) / GRID_SIZE
                     y = (gy + py.item()) / GRID_SIZE
                     w = pw.item()
                     h = ph.item()
 
-                    pred_boxes.append([0, x, y, w, h])
+                    pred_boxes.append([0, x, y, w, h, pconf.item()])
 
                 # -------- GT --------
                 tx, ty, tw, th, tconf = target_grid[gy, gx]
@@ -131,19 +135,35 @@ with torch.no_grad():
                     h = th.item()
 
                     target_boxes.append([0, x, y, w, h])
-        
-        pred_boxes = torch.tensor(pred_boxes) if len(pred_boxes) > 0 else torch.zeros((0,5))
+
+        # Tensor bauen
+        pred_boxes = torch.tensor(pred_boxes) if len(pred_boxes) > 0 else torch.zeros((0,6))
         target_boxes = torch.tensor(target_boxes) if len(target_boxes) > 0 else torch.zeros((0,5))
 
-        # Zeichnen
-        img_pred = draw_boxes(img.copy(), pred_boxes)
-        img_gt = draw_boxes(img.copy(), target_boxes)
+        # ----------------------------
+        # NMS anwenden
+        # ----------------------------
+        print("Predictions before NMS:", len(pred_boxes))
 
-        # Anzeigen
+        if len(pred_boxes) > 0:
+            keep = nms(pred_boxes, iou_threshold=0.5)
+            pred_boxes = pred_boxes[keep]
+
+        print("Predictions after NMS:", len(pred_boxes))
+
+        # ----------------------------
+        # Zeichnen
+        # ----------------------------
+        img_pred = draw_boxes(img.copy(), pred_boxes.numpy())
+        img_gt = draw_boxes(img.copy(), target_boxes.numpy())
+
+        # ----------------------------
+        # Plot + Save
+        # ----------------------------
         plt.figure(figsize=(10,5))
 
         plt.subplot(1,2,1)
-        plt.title("Predictions")
+        plt.title("Predictions (NMS)")
         plt.imshow(img_pred)
         plt.axis("off")
 
@@ -152,7 +172,10 @@ with torch.no_grad():
         plt.imshow(img_gt)
         plt.axis("off")
 
-        plt.savefig("results.png")
+        save_path = "results/prediction.png"
+        plt.savefig(save_path)
+        print(f"Bild gespeichert unter: {save_path}")
+
         plt.show()
 
         break

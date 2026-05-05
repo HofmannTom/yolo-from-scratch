@@ -1,4 +1,5 @@
 import cv2
+import torch
 
 # ----------------------------
 # Draw_boxes Funktion
@@ -84,3 +85,45 @@ def yolo_loss(pred, target):
     )
 
     return loss
+
+
+# ----------------------------
+# NMS (Non-Maximum Suppression)
+# ----------------------------
+def nms(pred_boxes, iou_threshold=0.5):
+    """
+    pred_boxes: (N, 5) -> [x, y, w, h, conf]
+    """
+
+    if len(pred_boxes) == 0:
+        return []
+
+    # 1. nach confidence sortieren (hoch → niedrig)
+    scores = pred_boxes[:, 5]
+    print(scores)
+    indices = torch.argsort(scores, descending=True)
+
+    keep = []
+
+    while len(indices) > 0:
+        best = indices[0]
+        keep.append(best.item())
+
+        if len(indices) == 1:
+            break
+
+        rest = indices[1:]
+
+        best_box = pred_boxes[best]
+
+        new_indices = []
+
+        for i in rest:
+            box = pred_boxes[i]
+
+            if iou(best_box, box) < iou_threshold:
+                new_indices.append(i)
+
+        indices = torch.tensor(new_indices)
+
+    return keep
